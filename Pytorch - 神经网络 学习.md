@@ -297,17 +297,15 @@ Epoch 900, Loss: 0.005585184786468744 w: tensor([[1.9134]]) b: tensor([0.1968])
 
 **1. 可以将每个神经元理解为一个线性函数（所以单层感知机只能解决线性问题），多个神经元相当于多个线性函数的融合，即可表达非线性函数**
 
-<img src="D:\Tencent\wechat\WeChat Files\wxid_49jnpvywuck322\FileStorage\Temp\df7fe7429827e8b6f45e4ac252d91b4.jpg" alt="df7fe7429827e8b6f45e4ac252d91b4" style="zoom:30%;"/>
+<img src="E:\研\学习记录\Study_record\图片存储\pytorch-1.jpg" alt="pytorch-1" style="zoom:30%;" />
 
 **2. 可以将曲线化为多段直线，比如泰勒展开**
 
-<img src="D:\Tencent\wechat\WeChat Files\wxid_49jnpvywuck322\FileStorage\Temp\5f0ba252febd47e860a2ea4b365bc96.jpg" alt="5f0ba252febd47e860a2ea4b365bc96" style="zoom:30%;" />
+<img src="E:\研\学习记录\Study_record\图片存储\pytorch-2.jpg" alt="pytorch-2" style="zoom:30%;" />
 
 **3. 激活函数：可以使线性变非线性 或 限制函数范围，达到更好的模拟效果(图为 Sigmoid函数)**
 
-<img src="D:\Tencent\wechat\WeChat Files\wxid_49jnpvywuck322\FileStorage\Temp\9d8caa3b213829e7b4a3bff25f79c25.jpg" alt="9d8caa3b213829e7b4a3bff25f79c25" style="zoom:30%;"/>
-
-
+<img src="E:\研\学习记录\Study_record\图片存储\pytorch-3.jpg" alt="pytorch-3" style="zoom:30%;" />
 
 ```python
 # 示例：使用神经网络学习 y = x² 关系
