@@ -368,6 +368,116 @@ Epoch 1800, Loss: 0.004814780782908201
 
 
 
+```python
+import random
+import numpy as np
+
+class Network(object):
+
+    # 定义模型  输入：net = network.Network([784, 30, 10])
+    def __init__(self, sizes):
+        self.num_layers = len(sizes)    # 网络层数
+        self.sizes = sizes              # 每层神经元个数
+        self.biases = [np.random.randn(y, 1) for y in sizes[1:]]    # 偏置初始化
+        self.weights = [np.random.randn(y, x)                          
+                        for x, y in zip(sizes[:-1], sizes[1:])]     # 权重初始化
+        
+        # sizes[1:]：从索引1开始切片，这里指 [30, 10]；  sizes[0] 指 索引为0的元素：784 （每层神经元的个数）
+        # zip(sizes[:-1], sizes[1:])：将前一层和后一层的神经元个数配对，如(784,30),(30,10)
+        # np.random.randn(y, x)：生成y行x列的矩阵
+
+
+    # 前向传播
+    def feedforward(self, a):
+        for b, w in zip(self.biases, self.weights):
+            a = sigmoid(np.dot(w, a)+b) # 通过激活函数
+        return a                        # 返回输出层的激活值
+
+
+    # SGD 优化器：实现了神经网络的随机梯度下降，使用小批量数据来更新网络参数
+    # 输入：net.SGD(training_data, 30, 10, 3.0, test_data=test_data)
+    def SGD(self, training_data, epochs, mini_batch_size, eta,
+            test_data=None):  # epochs：训练轮数； mini_batch_size：小批量数据的大小； eta：学习率
+        if test_data: n_test = len(test_data) # 记录测试数据集大小
+        n = len(training_data)
+        for j in xrange(epochs):
+            random.shuffle(training_data)   # 打乱训练数据（可避免局部最优）
+            mini_batches = [                
+                training_data[k:k+mini_batch_size]
+                for k in xrange(0, n, mini_batch_size)] # 将训练数据划分为小批量，列表里是具体数据
+            for mini_batch in mini_batches:
+                self.update_mini_batch(mini_batch, eta) # 处理每个小批量，更新参数
+            if test_data:
+                print ("Epoch {0}: {1} / {2}".format(
+                    j, self.evaluate(test_data), n_test))   # 如果有测试数据：显示准确率
+            else:
+                print ("Epoch {0} complete".format(j))      # 如果无测试数据：只显示epoch完成信息
+
+        # xrange(epochs) 生成 [0, 1, 2, ..., epochs-1]
+        # xrange(起始, 结束, 步长)
+        # format()：字符串格式化的方法，用于将变量值插入到字符串中的特定位置
+
+
+    # 小批量数据更新
+    def update_mini_batch(self, mini_batch, eta):
+        nabla_b = [np.zeros(b.shape) for b in self.biases]  # 初始化偏置梯度
+        nabla_w = [np.zeros(w.shape) for w in self.weights] # 初始化权重梯度
+        for x, y in mini_batch:
+            delta_nabla_b, delta_nabla_w = self.backprop(x, y)
+            nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
+            nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+        self.weights = [w-(eta/len(mini_batch))*nw
+                        for w, nw in zip(self.weights, nabla_w)]
+        self.biases = [b-(eta/len(mini_batch))*nb
+                       for b, nb in zip(self.biases, nabla_b)]
+        
+        # np.zeros(b.shape) ：创建一个与 b 形状相同的全零矩阵。
+        
+
+    # 反向传播算法
+    def backprop(self, x, y):
+        nabla_w = [np.zeros(w.shape) for w in self.weights]
+        # feedforward
+        activation = x
+        activations = [x] 
+        zs = [] 
+        for b, w in zip(self.biases, self.weights):
+            z = np.dot(w, activation)+b
+            zs.append(z)
+            activation = sigmoid(z)
+            activations.append(activation)
+        # backward pass
+        delta = self.cost_derivative(activations[-1], y) * \
+            sigmoid_prime(zs[-1])
+        nabla_b[-1] = delta
+        nabla_w[-1] = np.dot(delta, activations[-2].transpose())
+        for l in xrange(2, self.num_layers):
+            z = zs[-l]
+            sp = sigmoid_prime(z)
+            delta = np.dot(self.weights[-l+1].transpose(), delta) * sp
+            nabla_b[-l] = delta
+            nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
+        return (nabla_b, nabla_w)
+
+    def evaluate(self, test_data):
+        test_results = [(np.argmax(self.feedforward(x)), y)
+                        for (x, y) in test_data]
+        return sum(int(x == y) for (x, y) in test_results)
+
+    def cost_derivative(self, output_activations, y):
+        r"""Return the vector of partial derivatives \partial C_x /
+        \partial a for the output activations."""
+        return (output_activations-y)
+
+#### Miscellaneous functions
+def sigmoid(z):
+    return 1.0/(1.0+np.exp(-z))
+
+def sigmoid_prime(z):
+    return sigmoid(z)*(1-sigmoid(z))
+
+```
+
 
 
 
