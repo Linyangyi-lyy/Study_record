@@ -366,7 +366,7 @@ Epoch 1800, Loss: 0.004814780782908201
 
 
 
-
+### 3. 用Python定义一个神经网络
 
 ```python
 import random
@@ -374,7 +374,8 @@ import numpy as np
 
 class Network(object):
 
-    # 定义模型  输入：net = network.Network([784, 30, 10])
+    # 定义模型  
+    # 输入：net = network.Network([784, 30, 10])
     def __init__(self, sizes):
         self.num_layers = len(sizes)    # 网络层数
         self.sizes = sizes              # 每层神经元个数
@@ -382,7 +383,7 @@ class Network(object):
         self.weights = [np.random.randn(y, x)                          
                         for x, y in zip(sizes[:-1], sizes[1:])]     # 权重初始化
         
-        # sizes[1:]：从索引1开始切片，这里指 [30, 10]；  sizes[0] 指 索引为0的元素：784 （每层神经元的个数）
+        # sizes[1:]：从索引1开始切片，这里指 [30, 10]；  sizes[0]指 索引为0的元素（每层神经元的个数）
         # zip(sizes[:-1], sizes[1:])：将前一层和后一层的神经元个数配对，如(784,30),(30,10)
         # np.random.randn(y, x)：生成y行x列的矩阵
 
@@ -394,10 +395,11 @@ class Network(object):
         return a                        # 返回输出层的激活值
 
 
-    # SGD 优化器：实现了神经网络的随机梯度下降，使用小批量数据来更新网络参数
+    # SGD 优化器
+    # 实现了神经网络的随机梯度下降，使用小批量数据来更新网络参数
     # 输入：net.SGD(training_data, 30, 10, 3.0, test_data=test_data)
     def SGD(self, training_data, epochs, mini_batch_size, eta,
-            test_data=None):  # epochs：训练轮数； mini_batch_size：小批量数据的大小； eta：学习率
+            test_data=None):  # epochs：训练轮数； mini_batch_size：小批量数据大小； eta：学习率
         if test_data: n_test = len(test_data) # 记录测试数据集大小
         n = len(training_data)
         for j in xrange(epochs):
@@ -409,9 +411,9 @@ class Network(object):
                 self.update_mini_batch(mini_batch, eta) # 处理每个小批量，更新参数
             if test_data:
                 print ("Epoch {0}: {1} / {2}".format(
-                    j, self.evaluate(test_data), n_test))   # 如果有测试数据：显示准确率
+                    j, self.evaluate(test_data), n_test))  # 如果有测试数据：显示准确率
             else:
-                print ("Epoch {0} complete".format(j))      # 如果无测试数据：只显示epoch完成信息
+                print ("Epoch {0} complete".format(j))    # 如果无测试数据：只显示epoch完成信息
 
         # xrange(epochs) 生成 [0, 1, 2, ..., epochs-1]
         # xrange(起始, 结束, 步长)
@@ -423,32 +425,32 @@ class Network(object):
         nabla_b = [np.zeros(b.shape) for b in self.biases]  # 初始化偏置梯度
         nabla_w = [np.zeros(w.shape) for w in self.weights] # 初始化权重梯度
         for x, y in mini_batch:
-            delta_nabla_b, delta_nabla_w = self.backprop(x, y)
-            nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
-            nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+            delta_nabla_b, delta_nabla_w = self.backprop(x, y) # 计算梯度（函数见下）
+            nabla_b = [nb+dnb for nb, dnb in zip(nabla_b, delta_nabla_b)] # 梯度累加
+            nabla_w = [nw+dnw for nw, dnw in zip(nabla_w, delta_nabla_w)] # 梯度累加
         self.weights = [w-(eta/len(mini_batch))*nw
-                        for w, nw in zip(self.weights, nabla_w)]
+                        for w, nw in zip(self.weights, nabla_w)] # 更新权重
         self.biases = [b-(eta/len(mini_batch))*nb
-                       for b, nb in zip(self.biases, nabla_b)]
+                       for b, nb in zip(self.biases, nabla_b)] # 更新偏置
         
-        # np.zeros(b.shape) ：创建一个与 b 形状相同的全零矩阵。
-        
+        # np.zeros(b.shape) ：创建一个与 b 形状相同的全零矩阵
+          
 
-    # 反向传播算法
+    # 反向传播算法（x：样本输入； y：期望输出）
     def backprop(self, x, y):
         nabla_w = [np.zeros(w.shape) for w in self.weights]
-        # feedforward
+        # 前向
         activation = x
-        activations = [x] 
-        zs = [] 
+        activations = [x] # 存储每层的激活值
+        zs = [] # 记录每层加权输入
         for b, w in zip(self.biases, self.weights):
-            z = np.dot(w, activation)+b
+            z = np.dot(w, activation)+b # 矩阵运算 w · x + b
             zs.append(z)
-            activation = sigmoid(z)
-            activations.append(activation)
-        # backward pass
+            activation = sigmoid(z)     # 通过激活函数，得到激活值
+            activations.append(activation) # 记录激活值
+        # 后向传递
         delta = self.cost_derivative(activations[-1], y) * \
-            sigmoid_prime(zs[-1])
+            sigmoid_prime(zs[-1]) # 计算输出层误差
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
         for l in xrange(2, self.num_layers):
@@ -458,6 +460,8 @@ class Network(object):
             nabla_b[-l] = delta
             nabla_w[-l] = np.dot(delta, activations[-l-1].transpose())
         return (nabla_b, nabla_w)
+        # np.dot(): 矩阵乘法
+
 
     def evaluate(self, test_data):
         test_results = [(np.argmax(self.feedforward(x)), y)

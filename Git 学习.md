@@ -33,7 +33,7 @@
 
 ## <font color=" grey"> 二、创建仓库-推送-拉取 （实操代码记录）</font> 
 
-```
+```git
 # 初始化代码文件
 git init
 git add .
