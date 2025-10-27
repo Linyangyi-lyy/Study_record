@@ -450,7 +450,7 @@ class Network(object):
             activations.append(activation) # 记录激活值
         # 后向传递
         delta = self.cost_derivative(activations[-1], y) * \
-            sigmoid_prime(zs[-1]) # 计算输出层误差
+            sigmoid_prime(zs[-1]) 
         nabla_b[-1] = delta
         nabla_w[-1] = np.dot(delta, activations[-2].transpose())
         for l in xrange(2, self.num_layers):
@@ -463,20 +463,25 @@ class Network(object):
         # np.dot(): 矩阵乘法
 
 
+    # 计算准确率
     def evaluate(self, test_data):
         test_results = [(np.argmax(self.feedforward(x)), y)
                         for (x, y) in test_data]
-        return sum(int(x == y) for (x, y) in test_results)
+        return sum(int(x == y) for (x, y) in test_results) # 统计预测正确的数量
 
+
+    # 计算均方差的导数
     def cost_derivative(self, output_activations, y):
-        r"""Return the vector of partial derivatives \partial C_x /
-        \partial a for the output activations."""
         return (output_activations-y)
+    # 均方误差：C = 1/2 * (output_activations - y)²
+    # 导数：dC/d(output_activations) = output_activations - y
 
-#### Miscellaneous functions
+
+# sigmoid 函数
 def sigmoid(z):
     return 1.0/(1.0+np.exp(-z))
 
+# sigmoid 函数的导数
 def sigmoid_prime(z):
     return sigmoid(z)*(1-sigmoid(z))
 
