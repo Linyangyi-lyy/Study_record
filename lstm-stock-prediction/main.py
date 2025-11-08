@@ -1,4 +1,3 @@
-# 读取数据 - 处理数据 - 导入模型- 得到结果
 import pandas as pd
 import numpy as np
 import torch
@@ -9,8 +8,10 @@ import matplotlib.pyplot as plt
 
 
 # 参数设置
-seq_len = 50
-epochs = 50
+seq_len = 20
+epochs = 35
+test_size = 300
+
 input_size=1
 hidden_size=64
 num_layers=2
@@ -20,18 +21,21 @@ output_size=1
 df = pd.read_csv('SH600519.csv')
 df['data'] = pd.to_datetime(df['date']) # 转换日期格式
 df = df.sort_values('date').reset_index(drop=True) # 建立新索引
+total_samples = len(df)
 
 # 数据处理
 dataset = df['open'].values # 取开盘价作为数据集,转为numpy数组
 dataset_2d = dataset.reshape(-1, 1) # 转换为二维数组,用于归一化
+dataset_2d_train = dataset_2d[:total_samples - test_size]
+dataset_2d_test = dataset_2d[total_samples - test_size:]
 # 归一化
 scaler = MinMaxScaler(feature_range=(0, 1))
 dataset_scaled = scaler.fit_transform(dataset_2d)
 # print(dataset_scaled.ndim)
 
 # 划分测试集和训练集
-train_dataset_scaled = dataset_scaled[:2126]
-test_dataset_scaled = dataset_scaled[2126-seq_len:]
+train_dataset_scaled = scaler.fit_transform(dataset_2d_train)
+test_dataset_scaled = scaler.fit_transform(dataset_2d_test)
 
 # 定义数据集构造函数
 def make_dataset(dataset, seq_len):
@@ -53,7 +57,7 @@ train_y = torch.tensor(train_y, dtype=torch.float32).unsqueeze(-1)
 test_x = torch.tensor(test_x, dtype=torch.float32).unsqueeze(-1)
 test_y = torch.tensor(test_y, dtype=torch.float32).unsqueeze(-1)
 
-train_loader = DataLoader(TensorDataset(train_x, train_y), batch_size=32, shuffle=True)
+train_loader = DataLoader(TensorDataset(train_x, train_y), batch_size=64, shuffle=True)
 
 # 定义LSTM模型
 class LSTM_Network(nn.Module):
@@ -78,32 +82,61 @@ model = LSTM_Network(input_size, hidden_size, output_size, num_layers)
 criterion = nn.MSELoss()
 optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
+model.train()
+loss_list = []
+
+# 保存每个epoch的loss
+train_loss_list = []
+test_loss_list = []
+
 for epoch in range(epochs):
+    model.train()
+    total_train_loss = 0
     for x_batch, y_batch in train_loader:
         output = model(x_batch)
         loss = criterion(output, y_batch)
-        
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-    
-    if (epoch+1) % 10 == 0:
-        print(f"Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.6f}")
+        total_train_loss += loss.item()
 
+    avg_train_loss = total_train_loss / len(train_loader)
+    train_loss_list.append(avg_train_loss)
+
+    # 计算test loss
+    model.eval()
+    with torch.no_grad():
+        test_pred = model(test_x)
+        test_loss = criterion(test_pred, test_y).item()
+    test_loss_list.append(test_loss)
+
+    print(f"Epoch [{epoch+1}/{epochs}] | Train Loss: {avg_train_loss:.6f} | Test Loss: {test_loss:.6f}")
+
+# 绘制Loss曲线
+plt.figure(figsize=(8,5))
+plt.plot(train_loss_list, label='Train Loss')
+plt.plot(test_loss_list, label='Test Loss')
+plt.title('Training vs Testing Loss')
+plt.xlabel('Epoch')
+plt.ylabel('MSE Loss')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# 预测
 model.eval()
 with torch.no_grad():
-    pred = model(test_x).numpy()
+    pred = model(test_x)
 
-# 反归一化预测结果
-pred_real = scaler.inverse_transform(pred)
-y_real = scaler.inverse_transform(test_y.numpy())
+# 反归一化
+pred_price = scaler.inverse_transform(pred.numpy())
+real_price = scaler.inverse_transform(test_y.numpy())
 
-# 可视化
-import matplotlib.pyplot as plt
+# 绘图
 plt.figure(figsize=(10,5))
-plt.plot(y_real, label='Real Open Price')
-plt.plot(pred_real, label='Predicted Open Price')
+plt.plot(real_price, label='Real Open Price')
+plt.plot(pred_price, label='Predicted Open Price')
 plt.legend()
-plt.title("LSTM Stock Price Prediction (Open)")
+plt.title("LSTM Stock Price Prediction")
 plt.show()
 
