@@ -1,0 +1,30 @@
+log-level: info
+ipv6: true
+tcp-concurrent: true
+
+
+proxies:
+- name: "hy2"
+  type: hysteria2
+  server: japan.galiren.dev
+  port: 443
+  sni: japan.galiren.dev
+  password: GSdT/8DNPYRyjeCwVuDxaL1m
+  up: "10 Mbps"
+  down: "100 Mbps"
+  skip-cert-verify: false
+proxy-groups:
+  - name: VPS
+    type: select
+    proxies:
+      [
+        hy2
+      ]
+rules:
+  
+  - DOMAIN-SUFFIX, google.com, VPS
+  - DOMAIN-SUFFIX, linkedin.com, VPS
+  - DOMAIN-SUFFIX,.cn,DIRECT
+  - DOMAIN-SUFFIX,bilibili.com,DIRECT
+  - GEOIP,CN,DIRECT
+  - MATCH,VPS
